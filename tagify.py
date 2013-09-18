@@ -88,7 +88,7 @@ class GenerateSummaryCommand(sublime_plugin.TextCommand):
         self.view.insert(edit, 0, "\n".join(out))
         self.view.add_regions(
             "tagify-link", regions, 'link', "",
-            sublime.DRAW_NO_OUTLINE | sublime.HIDDEN)
+            sublime.HIDDEN)
         self.view.set_read_only(True)
         self.view.set_scratch(True)
 
