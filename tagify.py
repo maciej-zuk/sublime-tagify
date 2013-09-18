@@ -24,7 +24,7 @@ class Tagifier(sublime_plugin.EventListener):
             if tag_region.a >= 0:
                 self.tags_regions.append(tag_region)
         view.add_regions("tagify", self.tags_regions, "markup.inserted",
-                         "bookmark", sublime.DRAW_NO_OUTLINE)
+                         "bookmark", sublime.HIDDEN)
 
     def reanalyse_all(self, view):
         self.tags_regions = []
@@ -58,7 +58,7 @@ class Tagifier(sublime_plugin.EventListener):
 
 class ShowTagsMenuCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        tags = TagifyCommon.taglist+TagifyCommon.taglist_common
+        tags = list(set(TagifyCommon.taglist+TagifyCommon.taglist_common))
 
         def selected(pos):
             if pos >= 0:
@@ -88,7 +88,7 @@ class GenerateSummaryCommand(sublime_plugin.TextCommand):
         self.view.insert(edit, 0, "\n".join(out))
         self.view.add_regions(
             "tagify-link", regions, 'link', "",
-            sublime.DRAW_NO_OUTLINE | sublime.DRAW_NO_FILL)
+            sublime.DRAW_NO_OUTLINE | sublime.HIDDEN)
         self.view.set_read_only(True)
         self.view.set_scratch(True)
 
@@ -130,7 +130,7 @@ class TagifyCommand(sublime_plugin.WindowCommand):
                     #@todo move file extensions to settings
                     if ext in ('py', 'html', 'htm', 'js'):
                         self.tagify_file(dirname, filename, ctags, folder)
-        TagifyCommon.taglist = ctags.keys()
+        TagifyCommon.taglist = list(ctags.keys())
         summary = self.window.new_file()
         summary.set_name("Tags summary")
         summary.run_command("generate_summary", {"data": ctags})
