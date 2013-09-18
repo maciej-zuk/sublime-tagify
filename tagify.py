@@ -6,6 +6,9 @@ import re
 
 class TagifyCommon:
     data = {}
+    #@todo move common tags to settings
+    taglist_common = ["todo", "bug", "workaround"]
+    taglist = []
 
 
 class Tagifier(sublime_plugin.EventListener):
@@ -31,6 +34,9 @@ class Tagifier(sublime_plugin.EventListener):
     def on_post_save_async(self, view):
         self.reanalyse_all(view)
 
+    def on_load_async(self, view):
+        self.reanalyse_all(view)
+
     def on_selection_modified(self, view):
         sel = list(view.sel())
         if len(sel) != 1:
@@ -50,8 +56,20 @@ class Tagifier(sublime_plugin.EventListener):
                 return
 
 
-class GenerateSummaryCommand(sublime_plugin.TextCommand):
+class ShowTagsMenuCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        tags = TagifyCommon.taglist+TagifyCommon.taglist_common
 
+        def selected(pos):
+            if pos >= 0:
+                sel = self.view.sel()
+                for region in sel:
+                    self.view.run_command("insert", {'characters': "#@"+tags[pos]})
+
+        self.view.show_popup_menu(tags, selected)
+
+
+class GenerateSummaryCommand(sublime_plugin.TextCommand):
     def run(self, edit, data):
         out = []
         cpos = 0
@@ -68,7 +86,9 @@ class GenerateSummaryCommand(sublime_plugin.TextCommand):
             out.append("")
             cpos += 1
         self.view.insert(edit, 0, "\n".join(out))
-        self.view.add_regions("tagify-link", regions)
+        self.view.add_regions(
+            "tagify-link", regions, 'link', "",
+            sublime.DRAW_NO_OUTLINE | sublime.DRAW_NO_FILL)
         self.view.set_read_only(True)
         self.view.set_scratch(True)
 
@@ -90,7 +110,7 @@ class TagifyCommand(sublime_plugin.WindowCommand):
                         'region': (cpos + match.start(1), cpos + match.end(1)),
                         'comment': match.group(2),
                         'file': path,
-                        'short_file': path[len(folder_prefix)+1:],
+                        'short_file': path[len(folder_prefix) + 1:],
                         'line': n + 1
                     }
                     tag_name = match.group(1)
@@ -107,8 +127,10 @@ class TagifyCommand(sublime_plugin.WindowCommand):
             for dirname, dirnames, filenames in os.walk(folder):
                 for filename in filenames:
                     ext = filename.split('.')[-1]
+                    #@todo move file extensions to settings
                     if ext in ('py', 'html', 'htm', 'js'):
                         self.tagify_file(dirname, filename, ctags, folder)
+        TagifyCommon.taglist = ctags.keys()
         summary = self.window.new_file()
         summary.set_name("Tags summary")
         summary.run_command("generate_summary", {"data": ctags})
