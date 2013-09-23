@@ -9,6 +9,7 @@ class TagifyCommon:
     #@todo move common tags to settings
     taglist_common = ["todo", "bug", "workaround"]
     taglist = []
+    ready = False
 
 
 class Tagifier(sublime_plugin.EventListener):
@@ -58,6 +59,7 @@ class Tagifier(sublime_plugin.EventListener):
 
 class ShowTagsMenuCommand(sublime_plugin.TextCommand):
     def run(self, edit):
+
         tags = list(set(TagifyCommon.taglist+TagifyCommon.taglist_common))
 
         def selected(pos):
@@ -98,6 +100,10 @@ class TagifyCommand(sublime_plugin.WindowCommand):
     def __init__(self, arg):
         super(TagifyCommand, self).__init__(arg)
         self.tag_re = re.compile("#@((?:[_a-zA-Z0-9]+))(.*?)$")
+        if not TagifyCommon.ready:
+            TagifyCommon.ready=True
+            sublime.set_timeout_async(lambda: self.run(True), 0)
+
 
     def tagify_file(self, dirname, filename, ctags, folder_prefix):
         with open(os.path.join(dirname, filename)) as filelines:
@@ -120,7 +126,7 @@ class TagifyCommand(sublime_plugin.WindowCommand):
                         ctags[tag_name] = [data]
                 cpos += len(line)
 
-    def run(self):
+    def run(self, quiet=False):
         folders = self.window.folders()
         ctags = {}
         for folder in folders:
@@ -131,6 +137,7 @@ class TagifyCommand(sublime_plugin.WindowCommand):
                     if ext in ('py', 'html', 'htm', 'js'):
                         self.tagify_file(dirname, filename, ctags, folder)
         TagifyCommon.taglist = list(ctags.keys())
-        summary = self.window.new_file()
-        summary.set_name("Tags summary")
-        summary.run_command("generate_summary", {"data": ctags})
+        if not quiet:
+            summary = self.window.new_file()
+            summary.set_name("Tags summary")
+            summary.run_command("generate_summary", {"data": ctags})
