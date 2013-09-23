@@ -20,11 +20,12 @@ HTML:
 <!-- #@tag -->
 ```
 
-To gather summary press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> and run `Tagify: Get tag list` command. File names are double-clickable!
+To gather summary press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> and run `Tagify: Get tag list` command. File names are links!
+Using <kbd>Ctrl</kbd>+<kbd>t</kbd> you can bring menu with common and recently used tags.
 
 ## Installation
 Clone this repo into packages or search in package control.
 
 ## Todos
 - [ ] Add config files with tagable files specified.
-- [ ] Create ST3 package.
+
