@@ -106,7 +106,7 @@ class TagifyCommand(sublime_plugin.WindowCommand):
 
 
     def tagify_file(self, dirname, filename, ctags, folder_prefix):
-        with open(os.path.join(dirname, filename)) as filelines:
+        with open(os.path.join(dirname, filename), errors='replace') as filelines:
             cpos = 0
             for n, line in enumerate(filelines):
                 match = self.tag_re.search(line)
