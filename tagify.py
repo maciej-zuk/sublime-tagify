@@ -101,29 +101,39 @@ class TagifyCommand(sublime_plugin.WindowCommand):
         self.tag_re = re.compile("#@((?:[_a-zA-Z0-9]+))(.*?)$")
         settings = sublime.load_settings('Tagify.sublime-settings')
         if settings.get('analyse_on_start', True) and not TagifyCommon.ready:
-            TagifyCommon.ready=True
-            sublime.set_timeout_async(lambda: self.run(True), 0)
+            TagifyCommon.ready = True
+            try:
+                sublime.set_timeout_async(lambda: self.run(True), 0)
+            except AttributeError:
+                sublime.set_timeout(lambda: self.run(True), 0)
 
     def tagify_file(self, dirname, filename, ctags, folder_prefix):
-        with open(os.path.join(dirname, filename), errors='replace') as filelines:
-            cpos = 0
-            for n, line in enumerate(filelines):
-                match = self.tag_re.search(line)
-                if match:
-                    path = os.path.join(dirname, filename)
-                    data = {
-                        'region': (cpos + match.start(1), cpos + match.end(1)),
-                        'comment': match.group(2),
-                        'file': path,
-                        'short_file': "%s:%i" % (path[len(folder_prefix) + 1:], n + 1),
-                        'line': n + 1
-                    }
-                    tag_name = match.group(1)
-                    if tag_name in ctags:
-                        ctags[tag_name].append(data)
-                    else:
-                        ctags[tag_name] = [data]
-                cpos += len(line)
+        try:
+            filelines = open(os.path.join(dirname, filename), errors='replace')
+            do_encode = False
+        except TypeError:
+            filelines = open(os.path.join(dirname, filename))
+            do_encode = True
+        cpos = 0
+        for n, line in enumerate(filelines):
+            if do_encode:
+                line = line.decode('utf-8', 'replace')
+            match = self.tag_re.search(line)
+            if match:
+                path = os.path.join(dirname, filename)
+                data = {
+                    'region': (cpos + match.start(1), cpos + match.end(1)),
+                    'comment': match.group(2),
+                    'file': path,
+                    'short_file': "%s:%i" % (path[len(folder_prefix) + 1:], n + 1),
+                    'line': n + 1
+                }
+                tag_name = match.group(1)
+                if tag_name in ctags:
+                    ctags[tag_name].append(data)
+                else:
+                    ctags[tag_name] = [data]
+            cpos += len(line)
 
     def run(self, quiet=False):
         settings = sublime.load_settings('Tagify.sublime-settings')
