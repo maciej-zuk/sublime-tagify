@@ -7,5 +7,5 @@
     "common_tags": ["todo", "bug", "workaround"],
 
     // Extensions of files which will be processed by tagify
-    "extensions": ["py", "html", "htm", "js"],
+    "extensions": ["py", "html", "htm", "js"]
 }
