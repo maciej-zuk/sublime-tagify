@@ -1,0 +1,11 @@
+{
+    // Analyse project to find used tags on Sublime Text startup.
+    // Set to true if you plan to use common tags menu
+    "analyse_on_start": true,
+
+    // Common tags for tags menu
+    "common_tags": ["todo", "bug", "workaround"],
+
+    // Extensions of files which will be processed by tagify
+    "extensions": ["py", "html", "htm", "js"],
+}

@@ -26,6 +26,4 @@ Using <kbd>Ctrl</kbd>+<kbd>t</kbd> you can bring menu with common and recently u
 ## Installation
 Clone this repo into packages or search in package control.
 
-## Todos
-- [ ] Add config files with tagable files specified.
 

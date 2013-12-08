@@ -6,8 +6,8 @@ import re
 
 class TagifyCommon:
     data = {}
-    #@todo move common tags to settings
-    taglist_common = ["todo", "bug", "workaround"]
+    settings = sublime.load_settings('Tagify.sublime-settings')
+    taglist_common = settings.get('common_tags', ["todo", "bug", "workaround"])
     taglist = []
     ready = False
 
@@ -100,10 +100,9 @@ class TagifyCommand(sublime_plugin.WindowCommand):
     def __init__(self, arg):
         super(TagifyCommand, self).__init__(arg)
         self.tag_re = re.compile("#@((?:[_a-zA-Z0-9]+))(.*?)$")
-        if not TagifyCommon.ready:
+        if TagifyCommon.settings.get('analyse_on_start', True) and not TagifyCommon.ready:
             TagifyCommon.ready=True
             sublime.set_timeout_async(lambda: self.run(True), 0)
-
 
     def tagify_file(self, dirname, filename, ctags, folder_prefix):
         with open(os.path.join(dirname, filename), errors='replace') as filelines:
@@ -116,7 +115,7 @@ class TagifyCommand(sublime_plugin.WindowCommand):
                         'region': (cpos + match.start(1), cpos + match.end(1)),
                         'comment': match.group(2),
                         'file': path,
-                        'short_file': path[len(folder_prefix) + 1:],
+                        'short_file': "%s:%i" % (path[len(folder_prefix) + 1:], n + 1),
                         'line': n + 1
                     }
                     tag_name = match.group(1)
@@ -133,8 +132,8 @@ class TagifyCommand(sublime_plugin.WindowCommand):
             for dirname, dirnames, filenames in os.walk(folder):
                 for filename in filenames:
                     ext = filename.split('.')[-1]
-                    #@todo move file extensions to settings
-                    if ext in ('py', 'html', 'htm', 'js'):
+                    processed_extensions = TagifyCommon.settings.get('extensions', ('py', 'html', 'htm', 'js'))
+                    if ext in processed_extensions:
                         self.tagify_file(dirname, filename, ctags, folder)
         TagifyCommon.taglist = list(ctags.keys())
         if not quiet:
