@@ -3,10 +3,19 @@ import sublime_plugin
 import os
 import re
 
+class Prefs:
+    @staticmethod
+    def load():
+        settings = sublime.load_settings('Tagify.sublime-settings')
+        Prefs.common_tags = settings.get('common_tags', ["todo", "bug", "workaround"])
+        Prefs.analyse_on_start = settings.get('analyse_on_start', True)
+        Prefs.extensions = settings.get('extensions', ["py", "html", "htm", "js"])
+
+Prefs.load()
 
 class TagifyCommon:
     data = {}
-    taglist_common = sublime.load_settings('Tagify.sublime-settings').get('common_tags', ["todo", "bug", "workaround"])
+    taglist_common = Prefs.common_tags
     taglist = []
     ready = False
 
@@ -100,7 +109,7 @@ class TagifyCommand(sublime_plugin.WindowCommand):
         super(TagifyCommand, self).__init__(arg)
         self.tag_re = re.compile("#@((?:[_a-zA-Z0-9]+))(.*?)$")
         settings = sublime.load_settings('Tagify.sublime-settings')
-        if settings.get('analyse_on_start', True) and not TagifyCommon.ready:
+        if Prefs.analyse_on_start and not TagifyCommon.ready:
             TagifyCommon.ready = True
             try:
                 sublime.set_timeout_async(lambda: self.run(True), 0)
@@ -143,7 +152,7 @@ class TagifyCommand(sublime_plugin.WindowCommand):
             for dirname, dirnames, filenames in os.walk(folder):
                 for filename in filenames:
                     ext = filename.split('.')[-1]
-                    processed_extensions = settings.get('extensions', ('py', 'html', 'htm', 'js'))
+                    processed_extensions = Prefs.extensions
                     if ext in processed_extensions:
                         self.tagify_file(dirname, filename, ctags, folder)
         TagifyCommon.taglist = list(ctags.keys())
