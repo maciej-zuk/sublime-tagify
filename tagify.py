@@ -152,7 +152,7 @@ class TagifyCommand(sublime_plugin.WindowCommand):
             for dirname, dirnames, filenames in os.walk(folder):
                 for filename in filenames:
                     ext = filename.split('.')[-1]
-                    processed_extensions = Prefs.extensions
+                    processed_extensions = settings.get('extensions', ["py", "html", "htm", "js"])
                     if ext in processed_extensions:
                         self.tagify_file(dirname, filename, ctags, folder)
         TagifyCommon.taglist = list(ctags.keys())
