@@ -11,11 +11,8 @@ class Prefs:
         Prefs.analyse_on_start = settings.get('analyse_on_start', True)
         Prefs.extensions = settings.get('extensions', ["py", "html", "htm", "js"])
 
-Prefs.load()
-
 class TagifyCommon:
     data = {}
-    taglist_common = Prefs.common_tags
     taglist = []
     ready = False
 
@@ -68,7 +65,7 @@ class Tagifier(sublime_plugin.EventListener):
 class ShowTagsMenuCommand(sublime_plugin.TextCommand):
     def run(self, edit):
 
-        tags = list(set(TagifyCommon.taglist+TagifyCommon.taglist_common))
+        tags = list(set(TagifyCommon.taglist+Prefs.common_tags))
 
         def selected(pos):
             if pos >= 0:
@@ -108,7 +105,7 @@ class TagifyCommand(sublime_plugin.WindowCommand):
     def __init__(self, arg):
         super(TagifyCommand, self).__init__(arg)
         self.tag_re = re.compile("#@((?:[_a-zA-Z0-9]+))(.*?)$")
-        settings = sublime.load_settings('Tagify.sublime-settings')
+        Prefs.load()
         if Prefs.analyse_on_start and not TagifyCommon.ready:
             TagifyCommon.ready = True
             try:
@@ -145,7 +142,6 @@ class TagifyCommand(sublime_plugin.WindowCommand):
             cpos += len(line)
 
     def run(self, quiet=False):
-        settings = sublime.load_settings('Tagify.sublime-settings')
         folders = self.window.folders()
         ctags = {}
         for folder in folders:
