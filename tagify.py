@@ -8,6 +8,7 @@ class Prefs:
     def load():
         settings = sublime.load_settings('Tagify.sublime-settings')
         Prefs.common_tags = settings.get('common_tags', ["todo", "bug", "workaround"])
+        Prefs.blacklisted_tags = set(settings.get('blacklisted_tags', ["property"]))
         Prefs.analyse_on_start = settings.get('analyse_on_start', True)
         Prefs.extensions = settings.get('extensions', ["py", "html", "htm", "js"])
 
@@ -126,6 +127,9 @@ class TagifyCommand(sublime_plugin.WindowCommand):
                 line = line.decode('utf-8', 'replace')
             match = self.tag_re.search(line)
             if match:
+                tag_name = match.group(1)
+                if tag_name in Prefs.blacklisted_tags:
+                    continue
                 path = os.path.join(dirname, filename)
                 data = {
                     'region': (cpos + match.start(1), cpos + match.end(1)),
@@ -134,7 +138,6 @@ class TagifyCommand(sublime_plugin.WindowCommand):
                     'short_file': "%s:%i" % (path[len(folder_prefix) + 1:], n + 1),
                     'line': n + 1
                 }
-                tag_name = match.group(1)
                 if tag_name in ctags:
                     ctags[tag_name].append(data)
                 else:
