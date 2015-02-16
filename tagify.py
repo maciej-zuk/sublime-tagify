@@ -5,12 +5,21 @@ import re
 
 class Prefs:
     @staticmethod
-    def load():
+    def read():
         settings = sublime.load_settings('Tagify.sublime-settings')
         Prefs.common_tags = settings.get('common_tags', ["todo", "bug", "workaround"])
         Prefs.blacklisted_tags = set(settings.get('blacklisted_tags', ["property"]))
         Prefs.analyse_on_start = settings.get('analyse_on_start', True)
         Prefs.extensions = settings.get('extensions', ["py", "html", "htm", "js"])
+
+    @staticmethod
+    def load():
+        settings = sublime.load_settings('Tagify.sublime-settings')
+        settings.add_on_change('common_tags', Prefs.read)
+        settings.add_on_change('blacklisted_tags', Prefs.read)
+        settings.add_on_change('analyse_on_start', Prefs.read)
+        settings.add_on_change('extensions', Prefs.read)
+        Prefs.read()
 
 class TagifyCommon:
     data = {}
