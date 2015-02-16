@@ -153,16 +153,35 @@ class TagifyCommand(sublime_plugin.WindowCommand):
                     ctags[tag_name] = [data]
             cpos += len(line)
 
+    def process_file_list(self, paths, ctags, dir_prefix=None, root_prefix=None):
+        for path in paths:
+            if dir_prefix:
+                dirname = dir_prefix
+                filename = path
+            else:
+                dirname, filename = os.path.split(path)
+            if root_prefix:
+                folder = root_prefix
+            else:
+                folder = dirname
+            ext = filename.split('.')[-1]
+            processed_extensions = Prefs.extensions
+            if ext in processed_extensions:
+                self.tagify_file(dirname, filename, ctags, folder)
+
+
     def run(self, quiet=False):
-        folders = self.window.folders()
         ctags = {}
+
+        #process opened folders
+        folders = self.window.folders()
         for folder in folders:
             for dirname, dirnames, filenames in os.walk(folder):
-                for filename in filenames:
-                    ext = filename.split('.')[-1]
-                    processed_extensions = Prefs.extensions
-                    if ext in processed_extensions:
-                        self.tagify_file(dirname, filename, ctags, folder)
+                self.process_file_list(filenames, ctags, dirname, folder)
+
+        #process opened files
+        self.process_file_list([view.file_name() for view in self.window.views() if view.file_name()], ctags)
+
         TagifyCommon.taglist = list(ctags.keys())
         if not quiet:
             summary = self.window.new_file()
