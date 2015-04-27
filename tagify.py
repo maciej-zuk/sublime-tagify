@@ -182,8 +182,20 @@ class TagifyCommand(sublime_plugin.WindowCommand):
         #process opened files
         self.process_file_list([view.file_name() for view in self.window.views() if view.file_name()], ctags)
 
-        TagifyCommon.taglist = list(ctags.keys())
+        #make all found occurrences unique across opened files/folders, fix for https://github.com/taigh/sublime-tagify/issues/5
+        unique_ctags = {}
+        for tag, regions in ctags.items():
+            unique_regions = []
+            unique_path_lineno = set()
+            for region in regions:
+                path_lineno = (region['file'], region['line'])
+                if not path_lineno in unique_path_lineno:
+                    unique_path_lineno.add(path_lineno)
+                    unique_regions.append(region)
+                unique_ctags[tag] = unique_regions
+
+        TagifyCommon.taglist = list(unique_ctags.keys())
         if not quiet:
             summary = self.window.new_file()
             summary.set_name("Tags summary")
-            summary.run_command("generate_summary", {"data": ctags})
+            summary.run_command("generate_summary", {"data": unique_ctags})
