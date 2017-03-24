@@ -8,9 +8,10 @@ class Prefs:
     def read():
         settings = sublime.load_settings('Tagify.sublime-settings')
         Prefs.common_tags = settings.get('common_tags', ["todo", "bug", "workaround"])
-        Prefs.blacklisted_tags = set(settings.get('blacklisted_tags', ["property"]))
+        Prefs.blacklisted_tags = set(settings.get('blacklisted_tags', ["property"]) or [])
         Prefs.analyse_on_start = settings.get('analyse_on_start', True)
         Prefs.extensions = settings.get('extensions', ["py", "html", "htm", "js"])
+        Prefs.tag_re = settings.get('tag_re', "@((?:[_a-zA-Z0-9]+))")
 
     @staticmethod
     def load():
@@ -19,6 +20,7 @@ class Prefs:
         settings.add_on_change('blacklisted_tags', Prefs.read)
         settings.add_on_change('analyse_on_start', Prefs.read)
         settings.add_on_change('extensions', Prefs.read)
+        settings.add_on_change('tag_re', Prefs.read)
         Prefs.read()
 
 class TagifyCommon:
@@ -31,12 +33,13 @@ class Tagifier(sublime_plugin.EventListener):
 
     def __init__(self, *args, **kw):
         super(Tagifier, self).__init__(*args, **kw)
+        Prefs.load()
         self.last_sel = None
 
     def analyse_regions(self, view, regions):
         for region in regions:
             region = view.line(region)
-            tag_region = view.find("@(?:[_a-zA-Z0-9]+)", region.a)
+            tag_region = view.find(Prefs.tag_re, region.a)
             if tag_region.a >= 0:
                 self.tags_regions.append(tag_region)
         view.add_regions("tagify", self.tags_regions, "markup.inserted",
@@ -44,7 +47,7 @@ class Tagifier(sublime_plugin.EventListener):
 
     def reanalyse_all(self, view):
         self.tags_regions = []
-        regions = view.find_all("#@(?:[_a-zA-Z0-9]+)")
+        regions = view.find_all(Prefs.tag_re)
         self.analyse_regions(view, regions)
 
     def on_post_save_async(self, view):
@@ -64,12 +67,13 @@ class Tagifier(sublime_plugin.EventListener):
         for region in view.get_regions('tagify-link'):
             if region.contains(sel) and sel.size() > 0:
                 name = view.substr(region)
-                real_name = TagifyCommon.data[name]["file"]
-                line_no = TagifyCommon.data[name]["line"]
-                view.window().open_file(
-                    "%s:%i" % (real_name, line_no), sublime.ENCODED_POSITION)
-                view.sel().clear()
-                return
+                if name in TagifyCommon.data:
+                    real_name = TagifyCommon.data[name]["file"]
+                    line_no = TagifyCommon.data[name]["line"]
+                    view.window().open_file(
+                        "%s:%i" % (real_name, line_no), sublime.ENCODED_POSITION)
+                    view.sel().clear()
+                    return
 
 
 class ShowTagsMenuCommand(sublime_plugin.TextCommand):
@@ -114,7 +118,6 @@ class TagifyCommand(sublime_plugin.WindowCommand):
 
     def __init__(self, arg):
         super(TagifyCommand, self).__init__(arg)
-        self.tag_re = re.compile("#@((?:[_a-zA-Z0-9]+))(.*?)$")
         Prefs.load()
         if Prefs.analyse_on_start and not TagifyCommon.ready:
             TagifyCommon.ready = True
@@ -164,13 +167,19 @@ class TagifyCommand(sublime_plugin.WindowCommand):
                 folder = root_prefix
             else:
                 folder = dirname
-            ext = filename.split('.')[-1]
+            split_filename = filename.split('.')
+            ext = split_filename[-1]
             processed_extensions = Prefs.extensions
             if ext in processed_extensions:
+                self.tagify_file(dirname, filename, ctags, folder)
+            if None in processed_extensions and len(split_filename) == 1:
                 self.tagify_file(dirname, filename, ctags, folder)
 
 
     def run(self, quiet=False):
+        Prefs.read()
+        self.tag_re = re.compile("%s(.*?)$" % Prefs.tag_re)
+
         ctags = {}
 
         #process opened folders

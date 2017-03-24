@@ -7,9 +7,12 @@
     "common_tags": ["todo", "bug", "workaround"],
 
     // Extensions of files which will be processed by tagify
+    // add "none" (without " marks) to process files without extensions
     "extensions": ["py", "html", "htm", "js"],
 
     // In some cases we dont want particular #@string to be considered as tag
     // put those "bad" tags here
-    "blacklisted_tags": ["property"]
+    "blacklisted_tags": ["property"],
+
+    "tag_re": "#@((?:[_a-zA-Z0-9]+))"
 }

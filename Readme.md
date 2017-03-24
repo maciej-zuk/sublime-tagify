@@ -26,4 +26,5 @@ Using <kbd>Ctrl</kbd>+<kbd>t</kbd> you can bring menu with common and recently u
 ## Installation
 Clone this repo into packages or search in package control.
 
-
+## News
+- 24 march 2017 - you can custimize tag re, also plaintext files support added
